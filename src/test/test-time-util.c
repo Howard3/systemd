@@ -1339,4 +1339,44 @@ TEST(parse_birth_date) {
         ASSERT_ERROR(parse_birth_date("2023-06-15T00:00:00", &tm), EINVAL);
 }
 
+TEST(generate_random_birth_date) {
+        char buf[11];
+        struct tm tm;
+        time_t now_t;
+        struct tm now_tm;
+        int year, age;
+
+        now_t = time(NULL);
+        gmtime_r(&now_t, &now_tm);
+
+        /* Should succeed and produce a parseable date */
+        for (int i = 0; i < 50; i++) {
+                ASSERT_OK(generate_random_birth_date(buf));
+
+                /* Must be a valid birth date string */
+                ASSERT_OK(parse_birth_date(buf, &tm));
+
+                /* Age must be in [25, 60) */
+                year = tm.tm_year + 1900;
+                age = now_tm.tm_year + 1900 - year;
+                /* Could be off by 1 depending on month/day, so accept [24, 60] */
+                ASSERT_GE(age, 24);
+                ASSERT_LE(age, 60);
+        }
+
+        /* Two calls should (almost certainly) produce different dates,
+         * confirming randomness rather than a fixed value */
+        char buf2[11];
+        bool differ = false;
+        for (int i = 0; i < 10; i++) {
+                ASSERT_OK(generate_random_birth_date(buf));
+                ASSERT_OK(generate_random_birth_date(buf2));
+                if (strcmp(buf, buf2) != 0) {
+                        differ = true;
+                        break;
+                }
+        }
+        ASSERT_TRUE(differ);
+}
+
 DEFINE_TEST_MAIN_WITH_INTRO(LOG_INFO, intro);

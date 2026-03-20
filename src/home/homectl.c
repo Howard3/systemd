@@ -1169,6 +1169,21 @@ static int acquire_new_home_record(sd_json_variant *input, UserRecord **ret) {
         if (r < 0)
                 return r;
 
+        /* If no birth date was provided, generate a random one (age 25-60).
+         * Written once into the record — no algorithm to reverse. */
+        if (!sd_json_variant_by_key(v, "birthDate")) {
+                char bd_buf[11];
+
+                r = generate_random_birth_date(bd_buf);
+                if (r >= 0) {
+                        _cleanup_(sd_json_variant_unrefp) sd_json_variant *bd = NULL;
+
+                        r = sd_json_buildo(&bd, SD_JSON_BUILD_PAIR_STRING("birthDate", bd_buf));
+                        if (r >= 0)
+                                (void) sd_json_variant_merge_object(&v, bd);
+                }
+        }
+
         r = add_disposition(&v);
         if (r < 0)
                 return r;

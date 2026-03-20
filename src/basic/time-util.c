@@ -16,6 +16,7 @@
 #include "io-util.h"
 #include "log.h"
 #include "parse-util.h"
+#include "random-util.h"
 #include "path-util.h"
 #include "stat-util.h"
 #include "stdio-util.h"
@@ -1938,5 +1939,38 @@ int parse_calendar_date_full(const char *s, bool allow_pre_epoch, usec_t *ret_us
                 ret_tm->tm_year = parsed_tm.tm_year;
         }
 
+        return 0;
+}
+
+int generate_random_birth_date(char buf[static 11]) {
+        uint64_t rnd;
+        time_t now_t;
+        struct tm now_tm;
+
+        assert(buf);
+
+        /* Generate a random birth date placing the user between 25 and 60
+         * years of age. Uses /dev/urandom via random_bytes — no deterministic
+         * derivation, no reversibility. */
+
+        random_bytes(&rnd, sizeof(rnd));
+
+        now_t = time(NULL);
+        gmtime_r(&now_t, &now_tm);
+
+        int age = 25 + (int)(rnd % 35);
+        int doy = (int)((rnd >> 16) % 365);
+
+        struct tm bd = {
+                .tm_year = now_tm.tm_year - age,
+                .tm_mon  = 0,
+                .tm_mday = 1 + doy,
+                .tm_wday = -1,
+        };
+
+        if (timegm(&bd) == (time_t) -1 && bd.tm_wday == -1)
+                return -EINVAL;
+
+        snprintf(buf, 11, "%04d-%02d-%02d", bd.tm_year + 1900, bd.tm_mon + 1, bd.tm_mday);
         return 0;
 }

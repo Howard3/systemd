@@ -199,6 +199,8 @@ static inline int parse_birth_date(const char *s, struct tm *ret) {
         return parse_calendar_date_full(s, /* allow_pre_epoch= */ true, NULL, ret);
 }
 
+int generate_random_birth_date(char buf[static 11]);
+
 uint32_t usec_to_jiffies(usec_t usec);
 usec_t jiffies_to_usec(uint32_t jiffies);
 

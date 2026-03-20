@@ -1,6 +1,6 @@
 ![Systemd](http://brand.systemd.io/assets/page-logo.png)
 
-System and Service Manager
+System and Service Manager — for all jurisdictions not impacted by age-verification mandates
 
 [![OBS Packages Status](https://build.opensuse.org/projects/system:systemd/packages/systemd/badge.svg?type=default)](https://build.opensuse.org/project/show/system:systemd)<br/>
 [![Semaphore CI 2.0 Build Status](https://the-real-systemd.semaphoreci.com/badges/systemd/branches/main.svg?style=shields)](https://the-real-systemd.semaphoreci.com/projects/systemd)<br/>
@@ -13,6 +13,75 @@ System and Service Manager
 [![Coverage Status](https://coveralls.io/repos/github/systemd/systemd/badge.svg?branch=main)](https://coveralls.io/github/systemd/systemd?branch=main)</br>
 [![Packaging status](https://repology.org/badge/tiny-repos/systemd.svg)](https://repology.org/project/systemd/versions)</br>
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/systemd/systemd/badge)](https://securityscorecards.dev/viewer/?platform=github.com&org=systemd&repo=systemd)
+
+## Using this fork
+
+This fork is a drop-in replacement for upstream systemd. When a new user is
+created via `homectl` and no `--birth-date` is provided, a random birth date is
+generated automatically. The date is indistinguishable from a real one.
+
+### Arch Linux
+
+Replace the systemd source in the PKGBUILD:
+
+```bash
+asp update systemd && asp checkout systemd
+cd systemd/trunk
+
+# Point source to this fork
+sed -i 's|git+https://github.com/systemd/systemd|git+https://github.com/Howard3/systemd|' PKGBUILD
+updpkgsums
+makepkg -si
+```
+
+### Debian / Ubuntu
+
+```bash
+apt source systemd
+cd systemd-*/
+
+# Swap the upstream source
+git remote set-url origin https://github.com/Howard3/systemd.git
+git fetch origin && git checkout origin/main
+
+dpkg-buildpackage -us -uc -b
+sudo dpkg -i ../systemd_*.deb ../libsystemd0_*.deb
+```
+
+### Fedora / RHEL
+
+```bash
+dnf download --source systemd
+rpm -ivh systemd-*.src.rpm
+
+# Replace the source tarball
+cd ~/rpmbuild/SOURCES
+curl -L https://github.com/Howard3/systemd/archive/refs/heads/main.tar.gz -o systemd-main.tar.gz
+
+# Update the spec to use the new tarball name, then:
+rpmbuild -bb ~/rpmbuild/SPECS/systemd.spec
+sudo rpm -Uvh ~/rpmbuild/RPMS/x86_64/systemd-*.rpm
+```
+
+### Gentoo
+
+```bash
+# Create a local overlay
+mkdir -p /etc/portage/patches/sys-apps/systemd
+
+# Or override the ebuild source URI
+SYSTEMD_REPO="https://github.com/Howard3/systemd.git" emerge -av sys-apps/systemd
+```
+
+### From source (any distro)
+
+```bash
+git clone https://github.com/Howard3/systemd.git
+cd systemd
+meson setup build -Dprefix=/usr -Dsysconfdir=/etc -Dlocalstatedir=/var
+ninja -C build
+sudo ninja -C build install
+```
 
 ## Details
 
